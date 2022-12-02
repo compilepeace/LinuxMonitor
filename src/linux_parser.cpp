@@ -11,6 +11,15 @@ using std::string;
 using std::to_string;
 using std::vector;
 
+/* HELPER FUNCTION */
+void logfile(string fname, string msg) {
+  std::fstream stream(fname, std::ios::out);
+  if (stream.is_open()) {
+    stream << msg;
+  }
+  stream.close();
+}
+
 // DONE: An example of how to read data from the filesystem
 string LinuxParser::OperatingSystem() {
   string line;
@@ -107,17 +116,77 @@ long LinuxParser::UpTime() {
 }
 
 // TODO: Read and return the number of jiffies for the system
-long LinuxParser::Jiffies() { return 0; }
+long LinuxParser::Jiffies() {
+  long totaljiffies = 0;
+  vector<string> jiffies = LinuxParser::CpuUtilization();
+
+  for (size_t i = 0; i < jiffies.size(); ++i) {
+    if (i == CPUStates::kGuest_ || i == CPUStates::kGuestNice_) {
+      // usertime = usertime - guest
+      // nicetime = nicetime - guestnice
+      totaljiffies -= stol(jiffies[i]);
+    } else {
+      // sum all jiffies (from all CPUStates)
+      totaljiffies += stol(jiffies[i]);
+    }
+  }
+  return totaljiffies;
+}
 
 // TODO: Read and return the number of active jiffies for a PID
-// REMOVE: [[maybe_unused]] once you define the function
-long LinuxParser::ActiveJiffies(int pid [[maybe_unused]]) { return 0; }
+long LinuxParser::ActiveJiffies(int pid) {
+  vector<string> procstat;
+  string line;
+  std::ifstream stream(kProcDirectory + to_string(pid) + kStatFilename);
+  if (stream.is_open()) {
+    while (getline(stream, line)) {
+      std::istringstream ss(line);
+      string token;
+      while (getline(ss, token, ' ')) {
+        procstat.emplace_back(token);
+      }
+    }
+  }
+  // totalTime (spent by the process)
+  // startTime (the time the process started after system boot)
+  // systemUptime (the time duration since system boot)
+  long totalTime = stol(procstat[ProcessStates::kUTime_]) +
+                   stol(procstat[ProcessStates::kSTime_]) +
+                   stol(procstat[ProcessStates::kCuTime_]) +
+                   stol(procstat[ProcessStates::kCuTime_]);
+  totalTime /= sysconf(_SC_CLK_TCK);  // time in seconds
+                                      /*
+                                      long startTime = stol(procstat[ProcessStates::kStartTime_]);
+                                      startTime /= sysconf(_SC_CLK_TCK);  // time in seconds
+                                      long systemUptime = LinuxParser::UpTime();
+                                    
+                                      long procCpuUsage = systemUptime - startTime;
+                                      return (totalTime / procCpuUsage);
+                                      */
+  return totalTime;
+}
 
 // TODO: Read and return the number of active jiffies for the system
-long LinuxParser::ActiveJiffies() { return 0; }
+long LinuxParser::ActiveJiffies() {
+  vector<string> cpuinfo{LinuxParser::CpuUtilization()};
+  long totalActiveJiffies = 0;
+  for (size_t i = 0; i < cpuinfo.size(); ++i) {
+    if (i != CPUStates::kIdle_ && i != CPUStates::kIOwait_)
+      totalActiveJiffies += stol(cpuinfo[i]);
+  }
+  return totalActiveJiffies;
+}
 
 // TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
+long LinuxParser::IdleJiffies() {
+  vector<string> cpuinfo{LinuxParser::CpuUtilization()};
+  long totalIdleJiffies = 0;
+  for (size_t i = 0; i < cpuinfo.size(); ++i) {
+    if (i == CPUStates::kIdle_ || i == CPUStates::kIOwait_)
+      totalIdleJiffies += stol(cpuinfo[i]);
+  }
+  return totalIdleJiffies;
+}
 
 // TODO: Read and return CPU utilization
 vector<string> LinuxParser::CpuUtilization() {
@@ -130,7 +199,7 @@ vector<string> LinuxParser::CpuUtilization() {
       std::istringstream ss(line);
       ss >> key;
       if (key == "cpu") {
-        while (getline(ss, jiffy, ' ')) {
+        while (ss >> jiffy) {
           cpuinfo.emplace_back(jiffy);
         }
       }
@@ -249,7 +318,6 @@ string LinuxParser::User(int pid) {
 }
 
 // TODO: Read and return the uptime of a process
-// REMOVE: [[maybe_unused]] once you define the function
 #define STARTTIME 21
 long LinuxParser::UpTime(int pid) {
   string line;
@@ -263,6 +331,7 @@ long LinuxParser::UpTime(int pid) {
       procstat.emplace_back(token);
     }
   }
-  long procUptime = stol(procstat[STARTTIME]) / sysconf(_SC_CLK_TCK);
+  long procUptime = LinuxParser::UpTime() -
+                    (stol(procstat[STARTTIME]) / sysconf(_SC_CLK_TCK));
   return procUptime;
 }

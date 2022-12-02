@@ -14,15 +14,15 @@ using std::to_string;
 using std::vector;
 
 // TODO: Return this process's ID
-int Process::Pid() {
-  if (pid_ < 0) {
-    // set pid_
-  }
-  return pid_;
-}
+int Process::Pid() const { return pid_; }
 
 // TODO: Return this process's CPU utilization
-float Process::CpuUtilization() { return 0; }
+// https://stackoverflow.com/questions/16726779/how-do-i-get-the-total-cpu-usage-of-an-application-from-proc-pid-stat/16736599#16736599
+float Process::CpuUtilization() const {
+  long procActiveTime = LinuxParser::ActiveJiffies(Pid());
+  long procUptime = LinuxParser::UpTime(Pid());
+  return (float)procActiveTime / (float)procUptime;
+}
 
 // TODO: Return the command that generated this process
 string Process::Command() {
@@ -47,7 +47,6 @@ string Process::User() {
 long int Process::UpTime() { return LinuxParser::UpTime(Pid()); }
 
 // TODO: Overload the "less than" comparison operator for Process objects
-// REMOVE: [[maybe_unused]] once you define the function
-bool Process::operator<(Process const& a [[maybe_unused]]) const {
-  return true;
+bool Process::operator<(Process const& a) const {
+  return (Process::CpuUtilization() < a.CpuUtilization());
 }
