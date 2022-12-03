@@ -13,6 +13,11 @@ using std::string;
 using std::to_string;
 using std::vector;
 
+Process::Process(int pid) : pid_(pid) {
+  username_ = LinuxParser::User(pid_);
+  cmdline_ = LinuxParser::Command(pid_);
+}
+
 // TODO: Return this process's ID
 int Process::Pid() const { return pid_; }
 
@@ -33,7 +38,7 @@ string Process::Command() {
 }
 
 // TODO: Return this process's memory utilization
-string Process::Ram() { return LinuxParser::Ram(Pid()); }
+string Process::Ram() const { return LinuxParser::Ram(Pid()); }
 
 // TODO: Return the user (name) that generated this process
 string Process::User() {
@@ -47,6 +52,6 @@ string Process::User() {
 long int Process::UpTime() { return LinuxParser::UpTime(Pid()); }
 
 // TODO: Overload the "less than" comparison operator for Process objects
-bool Process::operator<(Process const& a) const {
-  return (Process::CpuUtilization() < a.CpuUtilization());
+bool Process::operator<(Process const &a) const {
+  return (stol(Process::Ram()) < stol(a.Ram()));
 }

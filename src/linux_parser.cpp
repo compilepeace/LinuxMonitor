@@ -142,7 +142,7 @@ long LinuxParser::ActiveJiffies(int pid) {
     while (getline(stream, line)) {
       std::istringstream ss(line);
       string token;
-      while (getline(ss, token, ' ')) {
+      while (ss >> token) {
         procstat.emplace_back(token);
       }
     }
@@ -155,14 +155,14 @@ long LinuxParser::ActiveJiffies(int pid) {
                    stol(procstat[ProcessStates::kCuTime_]) +
                    stol(procstat[ProcessStates::kCuTime_]);
   totalTime /= sysconf(_SC_CLK_TCK);  // time in seconds
-                                      /*
-                                      long startTime = stol(procstat[ProcessStates::kStartTime_]);
-                                      startTime /= sysconf(_SC_CLK_TCK);  // time in seconds
-                                      long systemUptime = LinuxParser::UpTime();
-                                    
-                                      long procCpuUsage = systemUptime - startTime;
-                                      return (totalTime / procCpuUsage);
-                                      */
+          /*
+          long startTime = stol(procstat[ProcessStates::kStartTime_]);
+          startTime /= sysconf(_SC_CLK_TCK);  // time in seconds
+          long systemUptime = LinuxParser::UpTime();
+
+          long procCpuUsage = systemUptime - startTime;
+          return (totalTime / procCpuUsage);
+          */
   return totalTime;
 }
 
@@ -261,17 +261,19 @@ string LinuxParser::Command(int pid) {
 string LinuxParser::Ram(int pid) {
   string line;
   std::ifstream stream(kProcDirectory + to_string(pid) + kStatusFilename);
-  while (getline(stream, line)) {
-    string key;
-    size_t memsize;
-    std::istringstream ss(line);
-    ss >> key >> memsize;
-    if (key == "VmSize:") {
-      // size already in KB, return size in MB
-      return to_string(memsize / 1024);
+  if (stream.is_open()){
+    while (getline(stream, line)) {
+      string key;
+      long memsize;
+      std::istringstream ss(line);
+      ss >> key >> memsize;
+      if (key == "VmSize:") {
+        // size already in KB, return size in MB
+        return to_string(memsize / 1024);
+      }
     }
   }
-  return string();
+  return "0";
 }
 
 // TODO: Read and return the user ID associated with a process
@@ -288,33 +290,27 @@ string LinuxParser::Uid(int pid) {
       if (key == "Uid:") return uid;
     }
   }
-  return string();
+  return "UNK";
 }
 
 // TODO: Read and return the user associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::User(int pid) {
   string line;
-  string username;
-  string uid{LinuxParser::Uid(pid)};
   std::ifstream stream(kPasswordPath);
-
   if (stream.is_open()) {
     while (getline(stream, line)) {
-      string token;
-      vector<string> userinfo;
+      string username, x, uid;
+      std::replace(line.begin(), line.end(), ':', ' ');
       std::istringstream ss(line);
-
-      // each line in /etc/password file is tokenized by ':' delimiter
-      while (getline(ss, token, ':')) {
-        userinfo.emplace_back(token);
-      }
-      if (userinfo[2] == to_string(pid)) {
-        return userinfo[0];
+      while (ss >> username >> x >> uid ) {
+        if (uid == LinuxParser::Uid(pid)){
+          return username;
+        }
       }
     }
   }
-  return string();
+  return "UNK";
 }
 
 // TODO: Read and return the uptime of a process
@@ -327,7 +323,7 @@ long LinuxParser::UpTime(int pid) {
     getline(stream, line);
     std::istringstream ss(line);
     string token;
-    while (getline(ss, token, ' ')) {
+    while (ss >> token) {
       procstat.emplace_back(token);
     }
   }

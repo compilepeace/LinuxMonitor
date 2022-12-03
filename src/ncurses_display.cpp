@@ -13,6 +13,17 @@
 using std::string;
 using std::to_string;
 
+#include <fstream>
+namespace helper {
+void logfile(string fname, string msg) {
+  std::fstream stream(fname, std::ios::out);
+  if (stream.is_open()) {
+    stream << msg;
+  }
+  stream.close();
+}
+}  // namespace helper
+
 // 50 bars uniformly displayed from 0 - 100 %
 // 2% is one bar(|)
 std::string NCursesDisplay::ProgressBar(float percent) {
@@ -56,6 +67,13 @@ void NCursesDisplay::DisplaySystem(System& system, WINDOW* window) {
 
 void NCursesDisplay::DisplayProcesses(std::vector<Process>& processes,
                                       WINDOW* window, int n) {
+  string result = "start\n";
+  for (auto p : processes) {
+    result += to_string(p.Pid()) + " ";
+  }
+  result += "\nend\n";
+  helper::logfile("/tmp/pidz", result);
+
   int row{0};
   int const pid_column{2};
   int const user_column{9};
