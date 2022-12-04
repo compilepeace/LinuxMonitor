@@ -40,6 +40,7 @@ string LinuxParser::OperatingSystem() {
       }
     }
   }
+  filestream.close();
   return value;
 }
 
@@ -53,6 +54,7 @@ string LinuxParser::Kernel() {
     std::istringstream linestream(line);
     linestream >> os >> version >> kernel;
   }
+  stream.close();
   return kernel;
 }
 
@@ -77,30 +79,32 @@ vector<int> LinuxParser::Pids() {
 }
 
 // TODO: Read and return the system memory utilization
+// Previously calculated by : memUsed = memTotal - memFree - buffers - cached -
+// slab;
 float LinuxParser::MemoryUtilization() {
-  string line;
-  int memTotal, memFree, buffers, cached;  // slab;
-
+  string line, title, usage;
+  vector<string> memVec;
+  float memTotal, memFree;
+  int idx = 0;
   std::ifstream stream(kProcDirectory + kMeminfoFilename);
-  while (getline(stream, line)) {
-    string key;
-    int value;
-    std::istringstream ss(line);
-    ss >> key >> value;
-    if (key == "MemTotal:")
-      memTotal = value;
-    else if (key == "MemFree:")
-      memFree = value;
-    else if (key == "Buffers:")
-      buffers = value;
-    else if (key == "Cached:")
-      cached = value;
-    // else if (key == "Slab:") slab = value;
+  if (stream.is_open()) {
+    while (std::getline(stream, line)) {
+      std::istringstream linestream(line);
+      linestream >> title >> usage;
+      if (title == "MemTotal:") {
+        memTotal = std::stof(usage);
+        ++idx;
+      } else if (title == "MemFree:") {
+        memFree = std::stof(usage);
+        ++idx;
+      }
+      if (idx == 2) break;
+    }
+    float memUsage = memTotal - memFree;
+    return memUsage / memTotal;
   }
-  double memUsed;
-  // memUsed = memTotal - memFree - buffers - cached - slab;
-  memUsed = memTotal - memFree - buffers - cached;
-  return (memUsed / memTotal);
+  stream.close();
+  return 0;
 }
 
 // TODO: Read and return the system uptime
@@ -114,6 +118,7 @@ long LinuxParser::UpTime() {
       ss >> uptime;
     }
   }
+  stream.close();
   return uptime;
 }
 
@@ -164,6 +169,7 @@ long LinuxParser::ActiveJiffies(int pid) {
                    stol(procstat[ProcessStates::kCuTime_]) +
                    stol(procstat[ProcessStates::kCsTime_]);
   totalTime /= sysconf(_SC_CLK_TCK);  // time in seconds
+  stream.close();
   return totalTime;
 }
 
@@ -206,6 +212,7 @@ vector<string> LinuxParser::CpuUtilization() {
       }
     }
   }
+  stream.close();
   return cpuinfo;
 }
 
@@ -226,6 +233,7 @@ int LinuxParser::TotalProcesses() {
       }
     }
   }
+  stream.close();
   return totalProcesses;
 }
 
@@ -246,6 +254,7 @@ int LinuxParser::RunningProcesses() {
       }
     }
   }
+  stream.close();
   return procsRunning;
 }
 
@@ -256,6 +265,7 @@ string LinuxParser::Command(int pid) {
   if (stream.is_open()) {
     getline(stream, cmdline);
   }
+  stream.close();
   return cmdline;
 }
 
@@ -275,6 +285,7 @@ string LinuxParser::Ram(int pid) {
       }
     }
   }
+  stream.close();
   return "0";
 }
 
@@ -292,6 +303,7 @@ string LinuxParser::Uid(int pid) {
       if (key == "Uid:") return uid;
     }
   }
+  stream.close();
   return "UNK";
 }
 
@@ -312,6 +324,7 @@ string LinuxParser::User(int pid) {
       }
     }
   }
+  stream.close();
   return "UNK";
 }
 
@@ -331,5 +344,6 @@ long LinuxParser::UpTime(int pid) {
   }
   long procUptime = LinuxParser::UpTime() -
                     (stol(procstat[STARTTIME]) / sysconf(_SC_CLK_TCK));
+  stream.close();
   return procUptime;
 }
