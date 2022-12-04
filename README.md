@@ -1,4 +1,5 @@
-# CppND-System-Monitor
+# Introduction
+Linux Monitor is a text-based graphical output program to monitor system processes.
 
 ![System Monitor](images/monitor.png)
 
@@ -6,9 +7,7 @@
 ## ncurses
 [ncurses](https://www.gnu.org/software/ncurses/) is a library that facilitates text-based graphical output in the terminal. This project relies on ncurses for display output.
 
-Within the Udacity Workspace, `.student_bashrc` automatically installs ncurses every time you launch the Workspace.
-
-If you are not using the Workspace, install ncurses within your own Linux environment: `sudo apt install libncurses5-dev libncursesw5-dev`
+To install ncurses within your own Linux environment: `sudo apt install libncurses5-dev libncursesw5-dev`
 
 ## Make
 This project uses [Make](https://www.gnu.org/software/make/). The Makefile has four targets:
@@ -26,4 +25,7 @@ This project uses [Make](https://www.gnu.org/software/make/). The Makefile has f
 3. Run the resulting executable: `./build/monitor`
 ![Starting System Monitor](images/starting_monitor.png)
 
-4. Implement the `System`, `Process`, and `Processor` classes, as well as functions within the `LinuxParser` namespace.
+4. Implemented `System`, `Process`, and `Processor` classes, as well as functions within the `LinuxParser` namespace.
+
+## Project Starter Code
+Starter code for this repository can be found at [`https://github.com/udacity/CppND-System-Monitor-Project-Updated.git`](https://github.com/udacity/CppND-System-Monitor-Project-Updated.git). 

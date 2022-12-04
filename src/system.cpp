@@ -20,18 +20,14 @@ using std::vector;
 Processor& System::Cpu() { return cpu_; }
 
 // TODO: Return a container composed of the system's processes
-bool comparator(const Process &p1, const Process &p2){
-  return p2 < p1;
-}
 vector<Process>& System::Processes() {
-  vector<int> pids = LinuxParser::Pids();
   processes_.clear();
+  vector<int> pids = LinuxParser::Pids();
   for (auto pid : pids) {
     processes_.emplace_back(Process(pid));
   }
-  sort(processes_.begin(), processes_.end(), [](const auto &p1, const auto &p2){
-    return p2 < p1;
-  });
+  sort(processes_.begin(), processes_.end(),
+       [](const auto& p1, const auto& p2) { return p2 < p1; });
   return processes_;
 }
 

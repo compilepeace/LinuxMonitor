@@ -11,7 +11,7 @@ using std::string;
 using std::to_string;
 using std::vector;
 
-/* HELPER FUNCTION */
+// HELPER FUNCTION
 void logfile(string fname, string msg) {
   std::fstream stream(fname, std::ios::out);
   if (stream.is_open()) {
@@ -99,7 +99,7 @@ float LinuxParser::MemoryUtilization() {
   }
   double memUsed;
   // memUsed = memTotal - memFree - buffers - cached - slab;
-  memUsed = (memTotal - memFree - buffers - cached);
+  memUsed = memTotal - memFree - buffers - cached;
   return (memUsed / memTotal);
 }
 
@@ -108,9 +108,11 @@ long LinuxParser::UpTime() {
   long uptime;
   string line;
   std::ifstream stream(kProcDirectory + kUptimeFilename);
-  while (getline(stream, line)) {
-    std::istringstream ss(line);
-    ss >> uptime;
+  if (stream.is_open()) {
+    while (getline(stream, line)) {
+      std::istringstream ss(line);
+      ss >> uptime;
+    }
   }
   return uptime;
 }
@@ -147,22 +149,21 @@ long LinuxParser::ActiveJiffies(int pid) {
       }
     }
   }
+  /*
+    // debug - SIGSEGV
+    string result;
+    for (string s: procstat)
+      result += s + "~";
+    logfile("/tmp/activejiffies", result);
+  */
   // totalTime (spent by the process)
   // startTime (the time the process started after system boot)
   // systemUptime (the time duration since system boot)
   long totalTime = stol(procstat[ProcessStates::kUTime_]) +
                    stol(procstat[ProcessStates::kSTime_]) +
                    stol(procstat[ProcessStates::kCuTime_]) +
-                   stol(procstat[ProcessStates::kCuTime_]);
+                   stol(procstat[ProcessStates::kCsTime_]);
   totalTime /= sysconf(_SC_CLK_TCK);  // time in seconds
-          /*
-          long startTime = stol(procstat[ProcessStates::kStartTime_]);
-          startTime /= sysconf(_SC_CLK_TCK);  // time in seconds
-          long systemUptime = LinuxParser::UpTime();
-
-          long procCpuUsage = systemUptime - startTime;
-          return (totalTime / procCpuUsage);
-          */
   return totalTime;
 }
 
@@ -221,6 +222,7 @@ int LinuxParser::TotalProcesses() {
       ss >> key >> value;
       if (key == "processes") {
         totalProcesses = value;
+        break;
       }
     }
   }
@@ -232,21 +234,22 @@ int LinuxParser::RunningProcesses() {
   int procsRunning = 0;
   string line;
   std::ifstream stream(kProcDirectory + kStatFilename);
-  while (getline(stream, line)) {
-    std::istringstream ss(line);
-    string key;
-    int value;
-    ss >> key >> value;
-    if (key == "procs_running") {
-      procsRunning = value;
-      break;
+  if (stream.is_open()) {
+    while (getline(stream, line)) {
+      std::istringstream ss(line);
+      string key;
+      int value;
+      ss >> key >> value;
+      if (key == "procs_running") {
+        procsRunning = value;
+        break;
+      }
     }
   }
   return procsRunning;
 }
 
 // TODO: Read and return the command associated with a process
-// REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Command(int pid) {
   string cmdline;
   std::ifstream stream(kProcDirectory + to_string(pid) + kCmdlineFilename);
@@ -257,11 +260,10 @@ string LinuxParser::Command(int pid) {
 }
 
 // TODO: Read and return the memory used by a process
-// REMOVE: [[maybe_unused]] once you define the function
 string LinuxParser::Ram(int pid) {
   string line;
   std::ifstream stream(kProcDirectory + to_string(pid) + kStatusFilename);
-  if (stream.is_open()){
+  if (stream.is_open()) {
     while (getline(stream, line)) {
       string key;
       long memsize;
@@ -303,8 +305,8 @@ string LinuxParser::User(int pid) {
       string username, x, uid;
       std::replace(line.begin(), line.end(), ':', ' ');
       std::istringstream ss(line);
-      while (ss >> username >> x >> uid ) {
-        if (uid == LinuxParser::Uid(pid)){
+      while (ss >> username >> x >> uid) {
+        if (uid == LinuxParser::Uid(pid)) {
           return username;
         }
       }
