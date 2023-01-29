@@ -1,5 +1,5 @@
 # Introduction
-Linux Monitor is a text-based graphical output program to monitor system processes.
+Linux Monitor is a text-based graphical output program to monitor system processes. Application parses [proc filesystem](https://man7.org/linux/man-pages/man5/proc.5.html) (an interface to kernel data structures) to retrieve information and format it using [ncurses](https://www.gnu.org/software/ncurses/).
 
 ![System Monitor](images/monitor.png)
 
@@ -26,6 +26,9 @@ This project uses [Make](https://www.gnu.org/software/make/). The Makefile has f
 ![Starting System Monitor](images/starting_monitor.png)
 
 4. Implemented `System`, `Process`, and `Processor` classes, as well as functions within the `LinuxParser` namespace.
+
+## Software Design
+<img src="./images/linuxmonitor_hld.png">
 
 ## Project Starter Code
 Starter code for this repository can be found at [`https://github.com/udacity/CppND-System-Monitor-Project-Updated.git`](https://github.com/udacity/CppND-System-Monitor-Project-Updated.git). 
