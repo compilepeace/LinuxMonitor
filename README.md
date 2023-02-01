@@ -1,5 +1,5 @@
-# Introduction
-Linux Monitor is a text-based graphical output program to monitor system processes. Application parses [proc filesystem](https://man7.org/linux/man-pages/man5/proc.5.html) (an interface to kernel data structures) to retrieve information and format it using [ncurses](https://www.gnu.org/software/ncurses/).
+# Linux Monitor
+A text-based graphical output program to monitor Linux system. Application parses [proc filesystem](https://man7.org/linux/man-pages/man5/proc.5.html) (an interface to kernel data structures) to retrieve information and format it using [ncurses](https://www.gnu.org/software/ncurses/).
 
 ![System Monitor](images/monitor.png)
 
